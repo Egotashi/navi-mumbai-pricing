@@ -1,0 +1,628 @@
+<title>Navi Mumbai Price Benchmarks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working column (max 1120px). Filters scope everything below them;
+   summary tiles, then benchmarks, then the models that explain them. */
+:root {
+  --page: #f6f7f5;
+  --surface: #fdfdfc;
+  --ink: #101413;
+  --ink-2: #4c524f;
+  --muted: #858a86;
+  --grid: #e3e5e1;
+  --axis: #c3c6c0;
+  --border: rgba(16, 20, 19, 0.10);
+  --accent: #1c5cab;
+  --accent-wash: rgba(42, 120, 214, 0.10);
+  --north: #2a78d6;
+  --central: #eb6834;
+  --south: #1baf7a;
+  --flag: #2a78d6;
+  --inline: #c9ccc6;
+  --up-good: #006300;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0e100f; --surface: #191b1a; --ink: #eef0ec; --ink-2: #c1c5bf; --muted: #898e89;
+    --grid: #2a2d2b; --axis: #3a3e3b; --border: rgba(255, 255, 255, 0.10);
+    --accent: #6da7ec; --accent-wash: rgba(57, 135, 229, 0.16);
+    --north: #3987e5; --central: #d95926; --south: #199e70; --flag: #3987e5; --inline: #4a4e4b;
+    --up-good: #0ca30c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0e100f; --surface: #191b1a; --ink: #eef0ec; --ink-2: #c1c5bf; --muted: #898e89;
+  --grid: #2a2d2b; --axis: #3a3e3b; --border: rgba(255, 255, 255, 0.10);
+  --accent: #6da7ec; --accent-wash: rgba(57, 135, 229, 0.16);
+  --north: #3987e5; --central: #d95926; --south: #199e70; --flag: #3987e5; --inline: #4a4e4b;
+  --up-good: #0ca30c; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--ink); font-family: var(--font-ui); font-size: 14px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.sub { color: var(--ink-2); max-width: 70ch; }
+.eyebrow { font-family: var(--font-data); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+header { display: grid; gap: 8px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 12.5px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--page);
+  padding-block: 10px; border-bottom: 1px solid var(--border); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--page); }
+.seg { display: flex; align-items: center; gap: 8px; }
+.seg-label { font-size: 12.5px; color: var(--ink-2); }
+.seg-btns { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg-btns button {
+  font: inherit; font-size: 13px; color: var(--ink-2); background: transparent; border: 0;
+  padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--border);
+}
+.seg-btns button:last-child { border-right: 0; }
+.seg-btns button:hover { background: var(--accent-wash); }
+.seg-btns button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; }
+.tile .label { font-size: 12.5px; color: var(--ink-2); }
+.tile .value { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.tile .note { font-size: 12px; color: var(--muted); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.card-head { display: grid; gap: 4px; }
+.card-head p { color: var(--ink-2); font-size: 13px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.key.dot { border-radius: 50%; }
+.key.ring { border-radius: 50%; background: transparent; border: 2px solid var(--ink-2); }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { font-family: var(--font-ui); }
+.footnote { font-size: 12px; color: var(--muted); }
+
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--ink-2); font-size: 12.5px; }
+td { font-variant-numeric: tabular-nums; }
+td .n { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+td.empty { color: var(--muted); }
+th.hl, td.hl { background: var(--accent-wash); }
+.zone-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: 1px; }
+.scroll { overflow-x: auto; }
+
+.est { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.est label { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.est select, .est input {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--page);
+  border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; width: 100%;
+}
+.est-out { display: grid; gap: 4px; padding: 14px 16px; border-radius: 10px; background: var(--accent-wash); }
+.est-out .big { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+.est-out .range { color: var(--ink-2); font-size: 13px; }
+
+.metrics td:first-child { color: var(--ink); }
+.metrics tr.sel td { font-weight: 600; }
+.pill { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); color: var(--ink-2); margin-left: 6px; font-weight: 400; }
+
+.notes { display: grid; gap: 8px; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+#tip {
+  position: fixed; pointer-events: none; z-index: 20; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12.5px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12); display: grid; gap: 2px; min-width: 150px;
+}
+#tip[hidden] { display: none; }
+#tip .t-val { font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+#tip .t-sub { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hit { cursor: default; }
+.hit:hover .bar, .hit:focus .bar { opacity: 0.8; }
+.hit:focus { outline: none; }
+.hit:focus .hitbox { stroke: var(--accent); stroke-width: 1.5; }
+
+@media (max-width: 860px) {
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .est { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile .value { font-size: 22px; }
+  h1 { font-size: 22px; }
+  .filters { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Residential resale &amp; new-launch listings · CIDCO nodes and Panvel belt</div>
+    <h1>Navi Mumbai Price Benchmarks</h1>
+    <p class="sub">Asking-price benchmarks per sq ft for flats across 18 Navi Mumbai nodes, with a location premium model, a fair-value screen and a quick valuation estimate. Built from public listing datasets scraped from Indian property portals.</p>
+    <div class="meta"><span id="meta-n"></span><span id="meta-src"></span><span>Prices are asking prices, not registered sale values</span></div>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filters">
+    <div class="seg"><span class="seg-label" id="belt-label">Belt</span>
+      <div class="seg-btns" id="f-belt" aria-labelledby="belt-label"></div></div>
+    <div class="seg"><span class="seg-label" id="bhk-label">BHK</span>
+      <div class="seg-btns" id="f-bhk" aria-labelledby="bhk-label"></div></div>
+  </div>
+
+  <section class="tiles" aria-label="Summary for the current filter">
+    <div class="tile"><span class="label">Listings in view</span><span class="value num" id="k-n"></span><span class="note" id="k-n-note"></span></div>
+    <div class="tile"><span class="label">Median rate</span><span class="value num" id="k-ppsf"></span><span class="note">₹ per sq ft of listed area</span></div>
+    <div class="tile"><span class="label">Median ticket size</span><span class="value num" id="k-ticket"></span><span class="note" id="k-ticket-note"></span></div>
+    <div class="tile"><span class="label">Under-construction share</span><span class="value num" id="k-uc"></span><span class="note" id="k-uc-note"></span></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Asking rate by node</h2>
+      <p>Median ₹ per sq ft with the middle half of listings (25th to 75th percentile) drawn as a line. Nodes with fewer than 15 listings in the current filter are left out.</p>
+    </div>
+    <div class="legend" id="zone-legend"></div>
+    <div class="chart" id="c-bench"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="card-head">
+        <h2>What location alone is worth</h2>
+        <p>Price difference against an otherwise identical flat in Kharghar (same area, BHK, bathrooms, age and furnishing). Bars show the 95% confidence interval. Fitted on all 2024 listings, so filters do not apply.</p>
+      </div>
+      <div class="chart" id="c-prem"></div>
+    </section>
+    <section class="card">
+      <div class="card-head">
+        <h2>Ready flats vs under construction</h2>
+        <p>Median ₹ per sq ft by possession status, for nodes with at least 10 listings of each kind in the current filter.</p>
+      </div>
+      <div class="legend"><span><i class="key dot" style="background:var(--ink-2)"></i>Ready to move</span><span><i class="key ring"></i>Under construction</span></div>
+      <div class="chart" id="c-uc"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Typical ticket size by node and configuration</h2>
+      <p>Median asking price, with listing count. Cells with fewer than 8 listings are left blank. Belt filter applies; the selected BHK column is highlighted.</p>
+    </div>
+    <div class="scroll"><table id="t-ticket"></table></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="card-head">
+        <h2>Quick valuation estimate</h2>
+        <p>Runs the hedonic regression in your browser. The range covers the middle half of model errors, so one in two listings falls outside it.</p>
+      </div>
+      <form class="est" id="est-form" onsubmit="return false">
+        <label for="e-node">Node<select id="e-node"></select></label>
+        <label for="e-bhk">BHK<select id="e-bhk"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
+        <label for="e-area">Listed area (sq ft)<input id="e-area" type="number" min="250" max="4000" step="10" value="1050"></label>
+        <label for="e-bath">Bathrooms<select id="e-bath"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
+        <label for="e-age">Building age (years)<input id="e-age" type="number" min="0" max="40" step="1" value="5"></label>
+        <label for="e-furn">Furnishing<select id="e-furn"><option>Unfurnished</option><option>Semi-Furnished</option><option>Furnished</option></select></label>
+      </form>
+      <div class="est-out" aria-live="polite">
+        <span class="eyebrow">Estimated asking price</span>
+        <span class="big num" id="e-out"></span>
+        <span class="range num" id="e-range"></span>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head">
+        <h2>Fair-value screen</h2>
+        <p>How far each 2024 listing's asking price sits from the gradient-boosting model's out-of-fold value. Listings more than 25% away are flagged for a closer look.</p>
+      </div>
+      <div class="legend"><span><i class="key" style="background:var(--inline)"></i>Within ±25%</span><span><i class="key" style="background:var(--flag)"></i>Flagged</span></div>
+      <div class="chart" id="c-fv"></div>
+      <p class="footnote" id="fv-note"></p>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>How well the valuation model works</h2>
+      <p id="m-intro"></p>
+    </div>
+    <div class="scroll"><table class="metrics" id="t-metrics"></table></div>
+  </section>
+
+  <section class="notes">
+    <h2>About the data</h2>
+    <ul>
+      <li>Three public datasets were combined: 2024 Makaan listings (area, furnishing, age, coordinates), an MMR Makaan scrape (possession status) and a listings set with 13 amenity flags. Duplicates were removed across and within sources on node, BHK, area and price.</li>
+      <li>"Listed area" is whatever the portal reported, which for many projects is built-up or super built-up area rather than RERA carpet area. Compare rates within this dataset, not against carpet-area quotes.</li>
+      <li>The data has no unit floor level, sale dates, absorption or lead data, so the dashboard covers pricing and supply mix only.</li>
+    </ul>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const BELTS = ["All", "North", "Central", "South"];
+const BHKS = ["All", "1", "2", "3", "4+"];
+const ZVAR = { North: "var(--north)", Central: "var(--central)", South: "var(--south)" };
+const state = { belt: "All", bhk: "All" };
+const SVGNS = "http://www.w3.org/2000/svg";
+
+// ---------- helpers ----------
+const fmtInt = n => Math.round(n).toLocaleString("en-IN");
+function fmtINR(v) {
+  if (v >= 1e7) return "₹" + (v / 1e7).toFixed(v >= 1e8 ? 1 : 2) + " Cr";
+  return "₹" + Math.round(v / 1e5) + " L";
+}
+function quantile(sorted, q) {
+  if (!sorted.length) return NaN;
+  const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+const median = a => quantile([...a].sort((x, y) => x - y), 0.5);
+function el(tag, attrs = {}, parent) {
+  const isSvg = ["svg","g","rect","line","circle","text","path","title"].includes(tag);
+  const e = isSvg ? document.createElementNS(SVGNS, tag) : document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function niceTicks(max, count = 5) {
+  const raw = max / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+  const ticks = []; for (let t = 0; t <= max + 1e-9; t += step) ticks.push(t);
+  if (ticks[ticks.length - 1] < max) ticks.push(ticks[ticks.length - 1] + step);
+  return ticks;
+}
+// Rounded data-end bar, square at the baseline.
+function hbarPath(x0, y, w, h, r) {
+  r = Math.min(r, w, h / 2);
+  return `M${x0},${y} H${x0 + w - r} Q${x0 + w},${y} ${x0 + w},${y + r} V${y + h - r} Q${x0 + w},${y + h} ${x0 + w - r},${y + h} H${x0} Z`;
+}
+function vbarPath(x, y0, w, h, r) {
+  r = Math.min(r, h, w / 2);
+  return `M${x},${y0} V${y0 - h + r} Q${x},${y0 - h} ${x + r},${y0 - h} H${x + w - r} Q${x + w},${y0 - h} ${x + w},${y0 - h + r} V${y0} Z`;
+}
+
+// ---------- tooltip ----------
+const tip = document.getElementById("tip");
+function showTip(evt, val, lines) {
+  tip.replaceChildren();
+  el("span", { class: "t-val", text: val }, tip);
+  for (const l of lines) el("span", { class: "t-sub", text: l }, tip);
+  tip.hidden = false;
+  let x, y;
+  if (evt.clientX !== undefined && evt.type !== "focus") { x = evt.clientX; y = evt.clientY; }
+  else { const r = evt.target.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top; }
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.min(window.innerWidth - tw - 12, Math.max(12, x + 14)) + "px";
+  tip.style.top = Math.max(12, y - th - 12) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+function bindTip(node, val, lines) {
+  node.setAttribute("tabindex", "0");
+  node.setAttribute("aria-label", val + ". " + lines.join(". "));
+  const h = e => showTip(e, val, lines);
+  node.addEventListener("pointermove", h);
+  node.addEventListener("focus", h);
+  node.addEventListener("pointerleave", hideTip);
+  node.addEventListener("blur", hideTip);
+}
+
+// ---------- data ----------
+const NODES = DATA.nodes;
+const ROWS = DATA.rows.map(r => ({ node: NODES[r[0]], bhk: r[1], area: r[2], ppsf: r[3], status: r[4] }));
+ROWS.forEach(r => { r.zone = DATA.zones[r.node]; r.price = r.ppsf * r.area; });
+
+function slice({ ignoreBhk = false } = {}) {
+  return ROWS.filter(r =>
+    (state.belt === "All" || r.zone === state.belt) &&
+    (ignoreBhk || state.bhk === "All" || (state.bhk === "4+" ? r.bhk >= 4 : r.bhk === +state.bhk)));
+}
+function groupBy(rows, key) {
+  const m = new Map();
+  for (const r of rows) { const k = r[key]; if (!m.has(k)) m.set(k, []); m.get(k).push(r); }
+  return m;
+}
+
+// ---------- filters ----------
+function buildSeg(id, opts, key) {
+  const box = document.getElementById(id);
+  for (const o of opts) {
+    const b = el("button", { type: "button", "aria-pressed": String(state[key] === o), text: o }, box);
+    b.addEventListener("click", () => {
+      state[key] = o;
+      box.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.textContent === o)));
+      try { localStorage.setItem("nm-filters", JSON.stringify(state)); } catch (e) {}
+      render();
+    });
+  }
+}
+
+// ---------- tiles ----------
+function renderTiles(rows) {
+  document.getElementById("k-n").textContent = fmtInt(rows.length);
+  document.getElementById("k-n-note").textContent =
+    `${new Set(rows.map(r => r.node)).size} nodes · ${state.belt === "All" ? "all belts" : state.belt + " belt"}`;
+  document.getElementById("k-ppsf").textContent = rows.length ? "₹" + fmtInt(median(rows.map(r => r.ppsf))) : "–";
+  document.getElementById("k-ticket").textContent = rows.length ? fmtINR(median(rows.map(r => r.price))) : "–";
+  document.getElementById("k-ticket-note").textContent =
+    rows.length ? `Median listed area ${fmtInt(median(rows.map(r => r.area)))} sq ft` : "";
+  const st = rows.filter(r => r.status > 0);
+  const uc = st.filter(r => r.status === 2).length;
+  document.getElementById("k-uc").textContent = st.length ? Math.round(100 * uc / st.length) + "%" : "–";
+  document.getElementById("k-uc-note").textContent = `of ${fmtInt(st.length)} listings with possession status`;
+}
+
+// ---------- benchmark chart ----------
+function renderBench(rows) {
+  const box = document.getElementById("c-bench");
+  box.replaceChildren();
+  const stats = [];
+  for (const [node, rs] of groupBy(rows, "node")) {
+    if (rs.length < 15) continue;
+    const s = rs.map(r => r.ppsf).sort((a, b) => a - b);
+    stats.push({ node, zone: DATA.zones[node], n: rs.length, p25: quantile(s, .25), med: quantile(s, .5), p75: quantile(s, .75) });
+  }
+  stats.sort((a, b) => b.med - a.med);
+  if (!stats.length) { el("p", { class: "footnote", text: "Too few listings in this filter to show node benchmarks." }, box); return; }
+  const W = 1040, L = 120, R = 70, rowH = 26, top = 8, bottom = 30;
+  const H = top + stats.length * rowH + bottom;
+  const max = Math.max(...stats.map(s => s.p75));
+  const ticks = niceTicks(max, 6), xmax = ticks[ticks.length - 1];
+  const x = v => L + (v / xmax) * (W - L - R);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Median asking price per square foot by node" }, box);
+  for (const t of ticks) {
+    el("line", { x1: x(t), x2: x(t), y1: top, y2: H - bottom, stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: x(t), y: H - bottom + 18, "text-anchor": "middle", "font-size": 11.5, fill: "var(--muted)", class: "num",
+      text: t === 0 ? "0" : "₹" + (t / 1000) + "K" }, svg);
+  }
+  el("line", { x1: L, x2: L, y1: top, y2: H - bottom, stroke: "var(--axis)", "stroke-width": 1 }, svg);
+  stats.forEach((s, i) => {
+    const y = top + i * rowH, bh = 14, by = y + (rowH - bh) / 2;
+    const g = el("g", { class: "hit" }, svg);
+    el("rect", { class: "hitbox", x: 0, y, width: W, height: rowH, fill: "transparent" }, g);
+    el("text", { x: L - 10, y: y + rowH / 2 + 4, "text-anchor": "end", "font-size": 12.5, fill: "var(--ink)", text: s.node }, g);
+    el("path", { class: "bar", d: hbarPath(L, by, x(s.med) - L, bh, 4), fill: ZVAR[s.zone] }, g);
+    el("line", { x1: x(s.p25), x2: x(s.p75), y1: y + rowH / 2, y2: y + rowH / 2, stroke: "var(--ink)", "stroke-width": 1.5, opacity: 0.55, "stroke-linecap": "round" }, g);
+    el("text", { x: Math.max(x(s.p75), x(s.med)) + 8, y: y + rowH / 2 + 4, "font-size": 11.5, fill: "var(--ink-2)", class: "num",
+      text: "₹" + fmtInt(s.med) }, g);
+    bindTip(g, `₹${fmtInt(s.med)} per sq ft`, [`${s.node} · ${s.zone} belt`,
+      `Middle half: ₹${fmtInt(s.p25)} – ₹${fmtInt(s.p75)}`, `${fmtInt(s.n)} listings`]);
+  });
+}
+
+// ---------- location premium ----------
+function renderPremium() {
+  const box = document.getElementById("c-prem");
+  box.replaceChildren();
+  const counts = groupBy(ROWS, "node");
+  const p = DATA.premiums.filter(d => (counts.get(d.node) || []).length >= 30)
+    .sort((a, b) => b.premium_vs_kharghar - a.premium_vs_kharghar);
+  const W = 520, L = 112, R = 20, rowH = 22, top = 6, bottom = 30;
+  const H = top + p.length * rowH + bottom;
+  const lo = -0.6, hi = 0.8;
+  const x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Location premium relative to Kharghar" }, box);
+  for (let t = -0.6; t <= 0.81; t += 0.2) {
+    const tt = Math.round(t * 10) / 10;
+    el("line", { x1: x(tt), x2: x(tt), y1: top, y2: H - bottom, stroke: tt === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: x(tt), y: H - bottom + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)", class: "num",
+      text: (tt > 0 ? "+" : "") + Math.round(tt * 100) + "%" }, svg);
+  }
+  p.forEach((d, i) => {
+    const y = top + i * rowH + rowH / 2;
+    const g = el("g", { class: "hit" }, svg);
+    el("rect", { class: "hitbox", x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent" }, g);
+    el("text", { x: L - 10, y: y + 4, "text-anchor": "end", "font-size": 12, fill: "var(--ink)", text: d.node }, g);
+    if (d.node !== "Kharghar")
+      el("line", { x1: x(d.ci_low), x2: x(d.ci_high), y1: y, y2: y, stroke: "var(--muted)", "stroke-width": 2, "stroke-linecap": "round" }, g);
+    el("circle", { cx: x(d.premium_vs_kharghar), cy: y, r: 5, fill: ZVAR[DATA.zones[d.node]], stroke: "var(--surface)", "stroke-width": 2 }, g);
+    const pct = v => (v > 0 ? "+" : "") + Math.round(v * 100) + "%";
+    bindTip(g, d.node === "Kharghar" ? "Reference node" : pct(d.premium_vs_kharghar) + " vs Kharghar",
+      d.node === "Kharghar" ? ["Kharghar"] : [d.node, `95% CI ${pct(d.ci_low)} to ${pct(d.ci_high)}`]);
+  });
+}
+
+// ---------- ready vs under construction ----------
+function renderUC(rows) {
+  const box = document.getElementById("c-uc");
+  box.replaceChildren();
+  const pairs = [];
+  for (const [node, rs] of groupBy(rows.filter(r => r.status > 0), "node")) {
+    const rd = rs.filter(r => r.status === 1).map(r => r.ppsf), uc = rs.filter(r => r.status === 2).map(r => r.ppsf);
+    if (rd.length >= 10 && uc.length >= 10) pairs.push({ node, ready: median(rd), uc: median(uc), nr: rd.length, nu: uc.length });
+  }
+  pairs.sort((a, b) => b.ready - a.ready);
+  if (!pairs.length) { el("p", { class: "footnote", text: "Too few listings with possession status in this filter." }, box); return; }
+  const W = 520, L = 112, R = 24, rowH = 24, top = 6, bottom = 30;
+  const H = top + pairs.length * rowH + bottom;
+  const vals = pairs.flatMap(p => [p.ready, p.uc]);
+  const ticks = niceTicks(Math.max(...vals), 4), xmax = ticks[ticks.length - 1];
+  const x = v => L + v / xmax * (W - L - R);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Ready versus under-construction price per square foot" }, box);
+  for (const t of ticks) {
+    el("line", { x1: x(t), x2: x(t), y1: top, y2: H - bottom, stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: x(t), y: H - bottom + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)", class: "num",
+      text: t === 0 ? "0" : "₹" + t / 1000 + "K" }, svg);
+  }
+  pairs.forEach((p, i) => {
+    const y = top + i * rowH + rowH / 2;
+    const g = el("g", { class: "hit" }, svg);
+    el("rect", { class: "hitbox", x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent" }, g);
+    el("text", { x: L - 10, y: y + 4, "text-anchor": "end", "font-size": 12, fill: "var(--ink)", text: p.node }, g);
+    el("line", { x1: x(p.ready), x2: x(p.uc), y1: y, y2: y, stroke: "var(--axis)", "stroke-width": 2 }, g);
+    el("circle", { cx: x(p.ready), cy: y, r: 5, fill: "var(--ink-2)", stroke: "var(--surface)", "stroke-width": 2 }, g);
+    el("circle", { cx: x(p.uc), cy: y, r: 4.5, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 2 }, g);
+    const gap = p.uc / p.ready - 1;
+    bindTip(g, `${gap >= 0 ? "+" : ""}${Math.round(gap * 100)}% under construction`, [p.node,
+      `Ready ₹${fmtInt(p.ready)} (${p.nr})`, `Under construction ₹${fmtInt(p.uc)} (${p.nu})`]);
+  });
+}
+
+// ---------- ticket table ----------
+function renderTicket() {
+  const t = document.getElementById("t-ticket");
+  t.replaceChildren();
+  const rows = slice({ ignoreBhk: true });
+  const cols = ["1", "2", "3", "4+"];
+  const thead = el("thead", {}, t), hr = el("tr", {}, thead);
+  el("th", { text: "Node" }, hr);
+  for (const c of cols) el("th", { text: c + " BHK", class: state.bhk === c ? "hl" : "" }, hr);
+  el("th", { text: "All" }, hr);
+  const tb = el("tbody", {}, t);
+  const byNode = [...groupBy(rows, "node")].filter(([, rs]) => rs.length >= 30)
+    .sort((a, b) => median(b[1].map(r => r.ppsf)) - median(a[1].map(r => r.ppsf)));
+  for (const [node, rs] of byNode) {
+    const tr = el("tr", {}, tb);
+    const td0 = el("td", {}, tr);
+    el("span", { class: "zone-dot", style: `background:${ZVAR[DATA.zones[node]]}` }, td0);
+    td0.appendChild(document.createTextNode(node));
+    for (const c of cols) {
+      const sub = rs.filter(r => c === "4+" ? r.bhk >= 4 : r.bhk === +c);
+      const td = el("td", { class: state.bhk === c ? "hl" : "" }, tr);
+      if (sub.length < 8) { td.classList.add("empty"); td.textContent = "–"; continue; }
+      td.appendChild(document.createTextNode(fmtINR(median(sub.map(r => r.price)))));
+      el("span", { class: "n", text: sub.length }, td);
+    }
+    const tdAll = el("td", {}, tr);
+    tdAll.appendChild(document.createTextNode(fmtINR(median(rs.map(r => r.price)))));
+    el("span", { class: "n", text: rs.length }, tdAll);
+  }
+}
+
+// ---------- fair value histogram ----------
+function renderFV() {
+  const box = document.getElementById("c-fv");
+  const { edges, counts, n } = DATA.fair_value_hist;
+  const W = 520, L = 40, R = 10, top = 10, bottom = 30, H = 210;
+  const ymax = niceTicks(Math.max(...counts), 4);
+  const top_ = ymax[ymax.length - 1];
+  const bw = (W - L - R) / counts.length;
+  const y = v => H - bottom - v / top_ * (H - bottom - top);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Distribution of asking price gap versus model value" }, box);
+  for (const t of ymax) {
+    el("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)", class: "num", text: fmtInt(t) }, svg);
+  }
+  counts.forEach((c, i) => {
+    const lo = edges[i], hi = edges[i + 1];
+    const flagged = hi <= -0.25 + 1e-9 || lo >= 0.25 - 1e-9;
+    const g = el("g", { class: "hit" }, svg);
+    el("rect", { class: "hitbox", x: L + i * bw, y: top, width: bw, height: H - bottom - top, fill: "transparent" }, g);
+    if (c > 0) el("path", { class: "bar", d: vbarPath(L + i * bw + 1, H - bottom, bw - 2, H - bottom - y(c), 3),
+      fill: flagged ? "var(--flag)" : "var(--inline)" }, g);
+    const label = (i === 0 ? "≤ " : "") + Math.round(lo * 100) + "% to " + (i === counts.length - 1 ? "≥ " : "") + Math.round(hi * 100) + "%";
+    bindTip(g, fmtInt(c) + " listings", ["Asking price " + label + " vs model", flagged ? "Flagged" : "Within ±25%"]);
+  });
+  for (const t of [-0.5, -0.25, 0, 0.25, 0.5]) {
+    const xx = L + (t - edges[0]) / (edges[edges.length - 1] - edges[0]) * (W - L - R);
+    el("text", { x: xx, y: H - bottom + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)", class: "num",
+      text: (t > 0 ? "+" : "") + Math.round(t * 100) + "%" }, svg);
+  }
+  el("line", { x1: L, x2: W - R, y1: H - bottom, y2: H - bottom, stroke: "var(--axis)", "stroke-width": 1 }, svg);
+  const sh = DATA.metrics.fair_value_flag_share;
+  document.getElementById("fv-note").textContent =
+    `${fmtInt(n)} listings. ${Math.round(sh["Priced above comparables"] * 100)}% priced above comparables, ` +
+    `${Math.round(sh["Priced below comparables"] * 100)}% below. Values beyond ±60% are grouped into the end bins.`;
+}
+
+// ---------- estimator ----------
+function setupEstimator() {
+  const sel = document.getElementById("e-node");
+  const counts = groupBy(ROWS, "node");
+  Object.keys(DATA.hedonic.node).filter(n => (counts.get(n) || []).length >= 30).sort()
+    .forEach(n => el("option", { value: n, text: n, ...(n === "Kharghar" ? { selected: "" } : {}) }, sel));
+  document.getElementById("est-form").addEventListener("input", estimate);
+  estimate();
+}
+function estimate() {
+  const h = DATA.hedonic;
+  const node = document.getElementById("e-node").value;
+  const bhk = +document.getElementById("e-bhk").value;
+  const area = Math.min(4000, Math.max(250, +document.getElementById("e-area").value || 0));
+  const bath = +document.getElementById("e-bath").value;
+  const age = Math.min(40, Math.max(0, +document.getElementById("e-age").value || 0));
+  const furn = document.getElementById("e-furn").value;
+  const lp = h.intercept + h.log_area * Math.log(area) + h.bhk * bhk + h.bathrooms * bath + h.age_years * age +
+    (h.node[node] || 0) + (h.furnishing[furn] || 0);
+  const v = Math.exp(lp);
+  document.getElementById("e-out").textContent = fmtINR(v);
+  const nodeMed = median((groupBy(ROWS, "node").get(node) || []).map(r => r.ppsf));
+  document.getElementById("e-range").textContent =
+    `Likely range ${fmtINR(Math.exp(lp + h.resid_p25))} – ${fmtINR(Math.exp(lp + h.resid_p75))} · ` +
+    `₹${fmtInt(v / area)} per sq ft against a ${node} median of ₹${fmtInt(nodeMed)}`;
+}
+
+// ---------- model metrics ----------
+function renderMetrics() {
+  const m = DATA.metrics;
+  document.getElementById("m-intro").textContent =
+    `Out-of-fold scores from 5-fold cross-validation on ${fmtInt(m.n_listings)} listings from ${fmtInt(m.n_projects)} projects. ` +
+    `Folds are split by project, so no building appears in both training and test data.`;
+  const t = document.getElementById("t-metrics");
+  const hr = el("tr", {}, el("thead", {}, t));
+  ["Model", "R² (log price)", "Median error", "Mean error", "Within 10%", "Within 20%"].forEach(h => el("th", { text: h }, hr));
+  const tb = el("tbody", {}, t);
+  const rows = [["baseline_node_median_ppsf", "Node median rate × area"], ["hedonic_ridge", "Hedonic regression"], ["gradient_boosting", "Gradient boosting"]];
+  const pc = v => (v * 100).toFixed(1) + "%";
+  for (const [k, name] of rows) {
+    const d = m[k];
+    const tr = el("tr", { class: m.selected_model === k ? "sel" : "" }, tb);
+    const td0 = el("td", { text: name }, tr);
+    if (m.selected_model === k) el("span", { class: "pill", text: "Used for fair value" }, td0);
+    [d.r2_log_price.toFixed(3), pc(d.median_ape), pc(d.mape), pc(d.within_10pct), pc(d.within_20pct)]
+      .forEach(v => el("td", { text: v }, tr));
+  }
+}
+
+// ---------- render ----------
+function render() {
+  const rows = slice();
+  renderTiles(rows);
+  renderBench(rows);
+  renderUC(rows);
+  renderTicket();
+}
+function init() {
+  try { const s = JSON.parse(localStorage.getItem("nm-filters") || "null"); if (s && BELTS.includes(s.belt) && BHKS.includes(s.bhk)) Object.assign(state, s); } catch (e) {}
+  buildSeg("f-belt", BELTS, "belt");
+  buildSeg("f-bhk", BHKS, "bhk");
+  const lg = document.getElementById("zone-legend");
+  for (const [z, c] of Object.entries(ZVAR)) {
+    const s = el("span", {}, lg);
+    el("i", { class: "key", style: `background:${c}` }, s);
+    s.appendChild(document.createTextNode(z + " belt"));
+  }
+  document.getElementById("meta-n").textContent = `${fmtInt(ROWS.length)} unique listings after cleaning`;
+  document.getElementById("meta-src").textContent = `${Object.keys(DATA.sources).length} public sources`;
+  renderPremium();
+  renderFV();
+  setupEstimator();
+  renderMetrics();
+  render();
+}
+init();
+</script>

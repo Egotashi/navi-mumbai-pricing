@@ -1,0 +1,45 @@
+{
+  "hedonic_ridge": {
+    "r2_log_price": 0.7833,
+    "mape": 0.2634,
+    "median_ape": 0.1889,
+    "within_10pct": 0.2713,
+    "within_20pct": 0.5212,
+    "r2_fold_std": 0.0441
+  },
+  "gradient_boosting": {
+    "r2_log_price": 0.826,
+    "mape": 0.2248,
+    "median_ape": 0.1603,
+    "within_10pct": 0.3321,
+    "within_20pct": 0.5839,
+    "r2_fold_std": 0.0327
+  },
+  "baseline_node_median_ppsf": {
+    "r2_log_price": 0.7105,
+    "mape": 0.2851,
+    "median_ape": 0.208,
+    "within_10pct": 0.2629,
+    "within_20pct": 0.4832
+  },
+  "selected_model": "gradient_boosting",
+  "n_listings": 6606,
+  "n_projects": 1488,
+  "hedonic_elasticity_area": 0.382,
+  "hedonic_age_effect_per_year": 0.0025,
+  "hedonic_r2_in_sample": 0.8124,
+  "fair_value_flag_share": {
+    "In line": 0.6689,
+    "Priced above comparables": 0.2035,
+    "Priced below comparables": 0.1276
+  },
+  "amenity_model": {
+    "n_listings": 1172,
+    "r2_in_sample": 0.91,
+    "premium_per_additional_amenity": 0.0079,
+    "premium_per_additional_amenity_ci95": [
+      0.0046,
+      0.0112
+    ]
+  }
+}
