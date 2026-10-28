@@ -1,11 +1,10 @@
-"""Clean and consolidate public Navi Mumbai listings from three sources.
+"""Clean Navi Mumbai flat listings from the 2024 Makaan scrape.
 
-Sources (see data/SOURCES.md):
-    makaan_2024      - 2024 Makaan listings: area, furnishing, age, bathrooms, lat/lon
-    makaan_mmr       - MMR Makaan listings: construction status, new vs resale
-    metro_amenities  - listings with 13 amenity flags (gym, pool, lift, ...)
+Source (see data/SOURCES.md): makaan_2024.csv, Makaan.com listings scraped in
+2024 for the Mumbai Metropolitan Region, with area, BHK, bathrooms, furnishing,
+building age and coordinates.
 
-Output: data/processed/listings.csv (one row per unique listing, common schema)
+Output: data/processed/listings.csv (one row per unique Navi Mumbai listing)
 """
 from __future__ import annotations
 
@@ -57,19 +56,9 @@ _NODE_PATTERNS = [
     for node, alts in NODES.items()
 ]
 
-AMENITY_COLS = {
-    "Gymnasium": "gym", "Lift Available": "lift", "CarParking": "parking",
-    "Maintenance Staff": "maintenance_staff", "24x7 Security": "security",
-    "Children's Play Area": "play_area", "Clubhouse": "clubhouse", "Intercom": "intercom",
-    "Landscaped Gardens": "gardens", "Indoor Games": "indoor_games",
-    "Gas Connection": "piped_gas", "Jogging Track": "jogging_track",
-    "Swimming Pool": "pool",
-}
-
 COLUMNS = [
     "source", "node", "zone", "bhk", "area_sqft", "price_inr", "price_per_sqft",
-    "property_type", "status", "sale_type", "age_years", "furnishing", "bathrooms",
-    "lat", "lon", "amenity_count", *AMENITY_COLS.values(), "project",
+    "property_type", "age_years", "furnishing", "bathrooms", "lat", "lon", "project",
 ]
 
 
@@ -103,42 +92,6 @@ def _load_makaan_2024() -> pd.DataFrame:
     })
 
 
-def _load_makaan_mmr() -> pd.DataFrame:
-    df = pd.read_csv(RAW / "makaan_mmr.csv")
-    df["node"] = df["region"].map(map_node)
-    df = df[df["node"].notna()].copy()
-    mult = df["price_unit"].map({"L": 1e5, "Cr": 1e7})
-    return pd.DataFrame({
-        "source": "makaan_mmr",
-        "node": df["node"],
-        "bhk": df["bhk"],
-        "area_sqft": df["area"],
-        "price_inr": df["price"] * mult,
-        "property_type": df["type"],
-        "status": df["status"],
-        "sale_type": df["age"].replace("Unknown", np.nan),
-        "project": df["locality"].str.strip().str.lower(),
-    })
-
-
-def _load_metro_amenities() -> pd.DataFrame:
-    df = pd.read_csv(RAW / "metro_amenities.csv", index_col=0)
-    df["node"] = df["location"].map(map_node)
-    df = df[df["node"].notna()].copy()
-    flags = df[list(AMENITY_COLS)].rename(columns=AMENITY_COLS)
-    out = pd.DataFrame({
-        "source": "metro_amenities",
-        "node": df["node"],
-        "bhk": df["bhk"],
-        "area_sqft": df["sqrt"],  # column is mislabelled in the raw file; values are sq ft
-        "price_inr": df["price"],
-        "sale_type": df["New/Resale"].map({1: "New", 0: "Resale"}),
-    })
-    out = pd.concat([out, flags], axis=1)
-    out["amenity_count"] = flags.sum(axis=1, min_count=1)
-    return out
-
-
 def _clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     log = {"rows_in": len(df)}
 
@@ -146,12 +99,11 @@ def _clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     for col in ["bhk", "area_sqft", "price_inr", "age_years", "bathrooms"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df = df.dropna(subset=["bhk", "area_sqft", "price_inr"])
+    df = df.dropna(subset=["bhk", "area_sqft", "price_inr", "bathrooms", "age_years"])
     log["after_drop_missing"] = len(df)
 
     # Residential flats only; plots, villas and independent houses price differently.
-    keep_types = {"Apartment", "Studio Apartment", np.nan, None}
-    df = df[df["property_type"].isin(keep_types) | df["property_type"].isna()]
+    df = df[df["property_type"].isin({"Apartment", "Studio Apartment"})]
     log["after_type_filter"] = len(df)
 
     # Plausibility bounds on size and size-per-bedroom.
@@ -169,17 +121,15 @@ def _clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     df = df[(lp >= q1 - 3 * iqr) & (lp <= q3 + 3 * iqr)]
     log["after_outlier_trim"] = len(df)
 
-    # De-duplicate within and across sources. Listings are reposted, and the
-    # Makaan sources overlap, so match on node + bhk + area + price (rounded to
-    # the nearest Rs 10k). Keep the richest source when duplicates collide.
-    priority = {"makaan_2024": 0, "metro_amenities": 1, "makaan_mmr": 2}
-    df["_prio"] = df["source"].map(priority)
+    # De-duplicate. The same flat is often listed several times (by different
+    # brokers or reposted), so match on node + bhk + area + price rounded to
+    # the nearest Rs 10k and keep the first.
     df["_key"] = (
         df["node"] + "|" + df["bhk"].astype(int).astype(str) + "|"
         + df["area_sqft"].round().astype(int).astype(str) + "|"
         + (df["price_inr"] / 1e4).round().astype(int).astype(str)
     )
-    df = df.sort_values("_prio").drop_duplicates("_key", keep="first")
+    df = df.drop_duplicates("_key", keep="first")
     log["after_dedup"] = len(df)
 
     df["zone"] = df["node"].map(ZONES)
@@ -190,14 +140,7 @@ def _clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
 
 def build() -> tuple[pd.DataFrame, dict]:
-    raw = pd.concat(
-        [_load_makaan_2024(), _load_makaan_mmr(), _load_metro_amenities()],
-        ignore_index=True,
-    )
-    raw_by_source = raw["source"].value_counts().to_dict()
-    df, log = _clean(raw)
-    log["raw_navi_mumbai_rows_by_source"] = raw_by_source
-    log["clean_rows_by_source"] = df["source"].value_counts().to_dict()
+    df, log = _clean(_load_makaan_2024())
     PROCESSED.mkdir(parents=True, exist_ok=True)
     df.to_csv(PROCESSED / "listings.csv", index=False)
     return df, log

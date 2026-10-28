@@ -28,10 +28,9 @@ INK, MUTED, GRID = "#0b0b0b", "#898781", "#e1e0d9"
 def dashboard_data(df: pd.DataFrame) -> dict:
     nodes = sorted(df["node"].unique())
     node_idx = {n: i for i, n in enumerate(nodes)}
-    status_code = {"Ready to move": 1, "Under Construction": 2}
     rows = [
         [node_idx[r.node], int(r.bhk), int(round(r.area_sqft)), int(round(r.price_per_sqft)),
-         status_code.get(r.status, 0)]
+         int(r.age_years)]
         for r in df.itertuples()
     ]
     metrics = json.loads((OUT / "model_metrics.json").read_text())
@@ -39,7 +38,6 @@ def dashboard_data(df: pd.DataFrame) -> dict:
     fv = pd.read_csv(OUT / "fair_value_screen.csv")
     edges = np.arange(-0.6, 0.65, 0.05)
     hist, _ = np.histogram(fv["gap_pct"].clip(-0.6, 0.599), bins=edges)
-    amen = pd.read_csv(OUT / "amenity_premiums.csv")
     return {
         "nodes": nodes,
         "zones": {n: z for n, z in df.groupby("node")["zone"].first().items()},
@@ -49,8 +47,6 @@ def dashboard_data(df: pd.DataFrame) -> dict:
         "hedonic": json.loads((OUT / "hedonic_coefficients.json").read_text()),
         "fair_value_hist": {"edges": edges.round(2).tolist(), "counts": hist.tolist(),
                             "n": int(len(fv))},
-        "amenities": amen.round(4).to_dict(orient="records"),
-        "sources": df["source"].value_counts().to_dict(),
     }
 
 
@@ -119,25 +115,7 @@ def figures(df: pd.DataFrame) -> None:
     fig.savefig(FIG / "location_premium.png", dpi=160)
     plt.close(fig)
 
-    # 3. Amenity premiums.
-    a = pd.read_csv(OUT / "amenity_premiums.csv").sort_values("premium")
-    fig, ax = plt.subplots(figsize=(8, 4.8))
-    y = np.arange(len(a))
-    sig = a["p_value"] < 0.05
-    ax.hlines(y, a["ci_low"] * 100, a["ci_high"] * 100, color=MUTED, linewidth=2)
-    ax.scatter(a["premium"] * 100, y, s=46, zorder=3, edgecolor="white", linewidth=1.5,
-               color=np.where(sig, "#2a78d6", "#c3c2b7"))
-    ax.axvline(0, color="#c3c2b7", linewidth=1)
-    ax.set_yticks(y, a["amenity"].str.replace("_", " ").str.capitalize())
-    ax.set_xlabel("Price premium holding size, BHK, node, new/resale fixed (%) · 95% CI · blue = p < 0.05",
-                  color=MUTED, fontsize=9)
-    _style(ax)
-    ax.set_title("Amenities: individually small and noisy", loc="left", fontsize=12, fontweight="bold")
-    fig.tight_layout()
-    fig.savefig(FIG / "amenity_premiums.png", dpi=160)
-    plt.close(fig)
-
-    # 4. Model fit: out-of-fold predicted vs asking price.
+    # 3. Model fit: out-of-fold predicted vs asking price.
     fv = pd.read_csv(OUT / "fair_value_screen.csv")
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.scatter(fv["model_value_inr"] / 1e5, fv["price_inr"] / 1e5, s=5, alpha=0.25, color="#2a78d6",

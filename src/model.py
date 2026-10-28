@@ -1,13 +1,12 @@
 """Valuation models for Navi Mumbai flats.
 
-1. Valuation model (makaan_2024 rows: richest attributes)
+1. Valuation model on 2024 listings
    Target: log(price). Two models compared with project-grouped 5-fold CV, so
    listings from the same building never sit in both train and test folds:
      - Hedonic log-linear regression with node fixed effects (interpretable)
      - Histogram gradient boosting (non-linear, uses lat/lon)
-2. Amenity premiums (metro_amenities rows: the only source with amenity flags)
-   OLS of log(price) on size, BHK, new/resale, node fixed effects and the 13
-   amenity flags, with heteroskedasticity-robust (HC3) standard errors.
+2. Location premiums: OLS of log(price) on flat attributes and node fixed
+   effects, with heteroskedasticity-robust (HC3) standard errors.
 3. Fair-value screen: out-of-fold predictions from the better model are
    compared with asking prices to flag listings priced well above or below
    comparable stock.
@@ -32,10 +31,6 @@ OUT = ROOT / "outputs"
 
 NUM = ["log_area", "bhk", "bathrooms", "age_years"]
 CAT = ["node", "furnishing"]
-AMENITIES = [
-    "gym", "lift", "parking", "maintenance_staff", "security", "play_area", "clubhouse",
-    "intercom", "gardens", "indoor_games", "piped_gas", "jogging_track", "pool",
-]
 FAIR_VALUE_BAND = 0.25  # flag listings more than 25% from model value (~ the 75th pct error)
 
 
@@ -76,7 +71,7 @@ def _boosting() -> Pipeline:
 
 
 def valuation(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
-    d = df[df["source"] == "makaan_2024"].dropna(subset=["bathrooms", "age_years"]).copy()
+    d = df.dropna(subset=["bathrooms", "age_years"]).copy()
     d["log_area"] = np.log(d["area_sqft"])
     d["furnishing"] = d["furnishing"].fillna("Unknown")
     y = np.log(d["price_inr"].to_numpy())
@@ -158,51 +153,9 @@ def valuation(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     return results, fv
 
 
-def amenity_premiums(df: pd.DataFrame) -> pd.DataFrame:
-    d = df[df["source"] == "metro_amenities"].dropna(subset=AMENITIES).copy()
-    d["is_new"] = (d["sale_type"] == "New").astype(int)
-    formula = (
-        "np.log(price_inr) ~ np.log(area_sqft) + bhk + is_new + C(node) + "
-        + " + ".join(AMENITIES)
-    )
-    fit = smf.ols(formula, data=d).fit(cov_type="HC3")
-    ci = fit.conf_int()
-    rows = []
-    for a in AMENITIES:
-        rows.append({
-            "amenity": a,
-            "premium": np.exp(fit.params[a]) - 1,
-            "ci_low": np.exp(ci.loc[a, 0]) - 1,
-            "ci_high": np.exp(ci.loc[a, 1]) - 1,
-            "p_value": fit.pvalues[a],
-            "share_with": d[a].mean(),
-        })
-    out = pd.DataFrame(rows).sort_values("premium", ascending=False)
-    out.attrs["n"] = int(len(d))
-    out.attrs["r2"] = float(fit.rsquared)
-    # Amenities are highly collinear (gym/pool/clubhouse come bundled), so also
-    # report the premium for the bundle count, which is more stable.
-    fit2 = smf.ols(
-        "np.log(price_inr) ~ np.log(area_sqft) + bhk + is_new + C(node) + amenity_count",
-        data=d,
-    ).fit(cov_type="HC3")
-    out.attrs["premium_per_amenity"] = float(np.exp(fit2.params["amenity_count"]) - 1)
-    lo, hi = fit2.conf_int().loc["amenity_count"]
-    out.attrs["premium_per_amenity_ci"] = [float(np.exp(lo) - 1), float(np.exp(hi) - 1)]
-    out.to_csv(OUT / "amenity_premiums.csv", index=False)
-    return out
-
-
 def run(df: pd.DataFrame) -> dict:
     OUT.mkdir(exist_ok=True)
     results, _ = valuation(df)
-    am = amenity_premiums(df)
-    results["amenity_model"] = {
-        "n_listings": am.attrs["n"],
-        "r2_in_sample": round(am.attrs["r2"], 4),
-        "premium_per_additional_amenity": round(am.attrs["premium_per_amenity"], 4),
-        "premium_per_additional_amenity_ci95": [round(x, 4) for x in am.attrs["premium_per_amenity_ci"]],
-    }
     (OUT / "model_metrics.json").write_text(json.dumps(results, indent=2))
     return results
 

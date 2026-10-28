@@ -155,9 +155,9 @@ th.hl, td.hl { background: var(--accent-wash); }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Residential resale &amp; new-launch listings · CIDCO nodes and Panvel belt</div>
+    <div class="eyebrow">2024 listings snapshot · CIDCO nodes and Panvel belt</div>
     <h1>Navi Mumbai Price Benchmarks</h1>
-    <p class="sub">Asking-price benchmarks per sq ft for flats across 18 Navi Mumbai nodes, with a location premium model, a fair-value screen and a quick valuation estimate. Built from public listing datasets scraped from Indian property portals.</p>
+    <p class="sub">Asking-price benchmarks per sq ft for flats across 18 Navi Mumbai nodes, with a location premium model, a fair-value screen and a quick valuation estimate. Built from flat listings scraped from Makaan.com during 2024.</p>
     <div class="meta"><span id="meta-n"></span><span id="meta-src"></span><span>Prices are asking prices, not registered sale values</span></div>
   </header>
 
@@ -172,7 +172,7 @@ th.hl, td.hl { background: var(--accent-wash); }
     <div class="tile"><span class="label">Listings in view</span><span class="value num" id="k-n"></span><span class="note" id="k-n-note"></span></div>
     <div class="tile"><span class="label">Median rate</span><span class="value num" id="k-ppsf"></span><span class="note">₹ per sq ft of listed area</span></div>
     <div class="tile"><span class="label">Median ticket size</span><span class="value num" id="k-ticket"></span><span class="note" id="k-ticket-note"></span></div>
-    <div class="tile"><span class="label">Under-construction share</span><span class="value num" id="k-uc"></span><span class="note" id="k-uc-note"></span></div>
+    <div class="tile"><span class="label">Share in newer buildings</span><span class="value num" id="k-uc"></span><span class="note" id="k-uc-note"></span></div>
   </section>
 
   <section class="card">
@@ -188,16 +188,16 @@ th.hl, td.hl { background: var(--accent-wash); }
     <section class="card">
       <div class="card-head">
         <h2>What location alone is worth</h2>
-        <p>Price difference against an otherwise identical flat in Kharghar (same area, BHK, bathrooms, age and furnishing). Bars show the 95% confidence interval. Fitted on all 2024 listings, so filters do not apply.</p>
+        <p>Price difference against an otherwise identical flat in Kharghar (same area, BHK, bathrooms, age and furnishing). Bars show the 95% confidence interval. Fitted on all listings, so filters do not apply.</p>
       </div>
       <div class="chart" id="c-prem"></div>
     </section>
     <section class="card">
       <div class="card-head">
-        <h2>Ready flats vs under construction</h2>
-        <p>Median ₹ per sq ft by possession status, for nodes with at least 10 listings of each kind in the current filter.</p>
+        <h2>Newer vs older buildings</h2>
+        <p>Median ₹ per sq ft for flats in buildings up to 2 years old against those 8 or more years old, for nodes with at least 10 listings of each in the current filter.</p>
       </div>
-      <div class="legend"><span><i class="key dot" style="background:var(--ink-2)"></i>Ready to move</span><span><i class="key ring"></i>Under construction</span></div>
+      <div class="legend"><span><i class="key dot" style="background:var(--ink-2)"></i>8+ years old</span><span><i class="key ring"></i>0–2 years old</span></div>
       <div class="chart" id="c-uc"></div>
     </section>
   </div>
@@ -233,7 +233,7 @@ th.hl, td.hl { background: var(--accent-wash); }
     <section class="card">
       <div class="card-head">
         <h2>Fair-value screen</h2>
-        <p>How far each 2024 listing's asking price sits from the gradient-boosting model's out-of-fold value. Listings more than 25% away are flagged for a closer look.</p>
+        <p>How far each listing's asking price sits from the gradient-boosting model's out-of-fold value. Listings more than 25% away are flagged for a closer look.</p>
       </div>
       <div class="legend"><span><i class="key" style="background:var(--inline)"></i>Within ±25%</span><span><i class="key" style="background:var(--flag)"></i>Flagged</span></div>
       <div class="chart" id="c-fv"></div>
@@ -252,9 +252,9 @@ th.hl, td.hl { background: var(--accent-wash); }
   <section class="notes">
     <h2>About the data</h2>
     <ul>
-      <li>Three public datasets were combined: 2024 Makaan listings (area, furnishing, age, coordinates), an MMR Makaan scrape (possession status) and a listings set with 13 amenity flags. Duplicates were removed across and within sources on node, BHK, area and price.</li>
+      <li>Source: Makaan.com flat listings scraped in 2024 and published as a public Kaggle dataset (Apache-2.0). Listings carry no posting date, so the data is a 2024 snapshot rather than a monthly series. Repeat listings of the same flat were removed on node, BHK, area and price.</li>
       <li>"Listed area" is whatever the portal reported, which for many projects is built-up or super built-up area rather than RERA carpet area. Compare rates within this dataset, not against carpet-area quotes.</li>
-      <li>The data has no unit floor level, sale dates, absorption or lead data, so the dashboard covers pricing and supply mix only.</li>
+      <li>The data has no unit floor level, possession status, sale dates, absorption or lead data, so the dashboard covers pricing only.</li>
     </ul>
   </section>
 </div>
@@ -333,7 +333,7 @@ function bindTip(node, val, lines) {
 
 // ---------- data ----------
 const NODES = DATA.nodes;
-const ROWS = DATA.rows.map(r => ({ node: NODES[r[0]], bhk: r[1], area: r[2], ppsf: r[3], status: r[4] }));
+const ROWS = DATA.rows.map(r => ({ node: NODES[r[0]], bhk: r[1], area: r[2], ppsf: r[3], age: r[4] }));
 ROWS.forEach(r => { r.zone = DATA.zones[r.node]; r.price = r.ppsf * r.area; });
 
 function slice({ ignoreBhk = false } = {}) {
@@ -370,10 +370,9 @@ function renderTiles(rows) {
   document.getElementById("k-ticket").textContent = rows.length ? fmtINR(median(rows.map(r => r.price))) : "–";
   document.getElementById("k-ticket-note").textContent =
     rows.length ? `Median listed area ${fmtInt(median(rows.map(r => r.area)))} sq ft` : "";
-  const st = rows.filter(r => r.status > 0);
-  const uc = st.filter(r => r.status === 2).length;
-  document.getElementById("k-uc").textContent = st.length ? Math.round(100 * uc / st.length) + "%" : "–";
-  document.getElementById("k-uc-note").textContent = `of ${fmtInt(st.length)} listings with possession status`;
+  const nw = rows.filter(r => r.age <= 2).length;
+  document.getElementById("k-uc").textContent = rows.length ? Math.round(100 * nw / rows.length) + "%" : "–";
+  document.getElementById("k-uc-note").textContent = "Buildings 0–2 years old, including new launches";
 }
 
 // ---------- benchmark chart ----------
@@ -451,18 +450,18 @@ function renderUC(rows) {
   const box = document.getElementById("c-uc");
   box.replaceChildren();
   const pairs = [];
-  for (const [node, rs] of groupBy(rows.filter(r => r.status > 0), "node")) {
-    const rd = rs.filter(r => r.status === 1).map(r => r.ppsf), uc = rs.filter(r => r.status === 2).map(r => r.ppsf);
+  for (const [node, rs] of groupBy(rows, "node")) {
+    const rd = rs.filter(r => r.age >= 8).map(r => r.ppsf), uc = rs.filter(r => r.age <= 2).map(r => r.ppsf);
     if (rd.length >= 10 && uc.length >= 10) pairs.push({ node, ready: median(rd), uc: median(uc), nr: rd.length, nu: uc.length });
   }
   pairs.sort((a, b) => b.ready - a.ready);
-  if (!pairs.length) { el("p", { class: "footnote", text: "Too few listings with possession status in this filter." }, box); return; }
+  if (!pairs.length) { el("p", { class: "footnote", text: "Too few listings of each building age in this filter." }, box); return; }
   const W = 520, L = 112, R = 24, rowH = 24, top = 6, bottom = 30;
   const H = top + pairs.length * rowH + bottom;
   const vals = pairs.flatMap(p => [p.ready, p.uc]);
   const ticks = niceTicks(Math.max(...vals), 4), xmax = ticks[ticks.length - 1];
   const x = v => L + v / xmax * (W - L - R);
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Ready versus under-construction price per square foot" }, box);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Newer versus older building price per square foot" }, box);
   for (const t of ticks) {
     el("line", { x1: x(t), x2: x(t), y1: top, y2: H - bottom, stroke: "var(--grid)", "stroke-width": 1 }, svg);
     el("text", { x: x(t), y: H - bottom + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)", class: "num",
@@ -477,8 +476,8 @@ function renderUC(rows) {
     el("circle", { cx: x(p.ready), cy: y, r: 5, fill: "var(--ink-2)", stroke: "var(--surface)", "stroke-width": 2 }, g);
     el("circle", { cx: x(p.uc), cy: y, r: 4.5, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 2 }, g);
     const gap = p.uc / p.ready - 1;
-    bindTip(g, `${gap >= 0 ? "+" : ""}${Math.round(gap * 100)}% under construction`, [p.node,
-      `Ready ₹${fmtInt(p.ready)} (${p.nr})`, `Under construction ₹${fmtInt(p.uc)} (${p.nu})`]);
+    bindTip(g, `${gap >= 0 ? "+" : ""}${Math.round(gap * 100)}% for newer buildings`, [p.node,
+      `0–2 years ₹${fmtInt(p.uc)} (${p.nu})`, `8+ years ₹${fmtInt(p.ready)} (${p.nr})`]);
   });
 }
 
@@ -617,7 +616,7 @@ function init() {
     s.appendChild(document.createTextNode(z + " belt"));
   }
   document.getElementById("meta-n").textContent = `${fmtInt(ROWS.length)} unique listings after cleaning`;
-  document.getElementById("meta-src").textContent = `${Object.keys(DATA.sources).length} public sources`;
+  document.getElementById("meta-src").textContent = "Source: Makaan.com, 2024";
   renderPremium();
   renderFV();
   setupEstimator();
